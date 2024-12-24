@@ -1,0 +1,37 @@
+blockquote {
+    background-color: gainsboro;
+    margin: 1pt;
+    padding: 1pt;
+    padding-left: 5%;
+}
+
+body {
+    margin: 0 auto;
+    padding: 5% 5%;
+    max-width: 1300px;
+}
+
+img {
+    max-width: 80%;
+    max-height: auto;
+}
+
+div.MathJaxBox {
+    width: 85%;
+    overflow-x: auto;
+    border: 1px solid gray;
+    padding: 1em;
+    margin: 1em;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 3% 3%;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 2% 2%;
+    }
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/code.css">
+    <link rel="stylesheet" href="/static/main.css">
+    <title>【拯救数学】极大似然估计</title>
+</head>
+
+<body>
+    <header>
+        <h1>【拯救数学】极大似然估计</h1>
+        <p>10月06日04时</p>
+    </header>
+    <main>
+        <h1 id="_1">极大似然估计</h1>
+<p>我们假设数据<span class="MathJaxBox"><span class="MathJax_Preview">$y$</span><script type="math/tex">y</script></span>服从真实分布<span class="MathJaxBox"><span class="MathJax_Preview">$p(y)$</span><script type="math/tex">p(y)</script></span>。但是我们并不知道<span class="MathJaxBox"><span class="MathJax_Preview">$p(y)$</span><script type="math/tex">p(y)</script></span>，我们希望用似然分布<span class="MathJaxBox"><span class="MathJax_Preview">$p(y|\theta)$</span><script type="math/tex">p(y|\theta)</script></span>去拟合这个分布。</p>
+<p>我们认为采样出来的数据都是从独立的同一分布采样的（iid）。因此：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+p(y|\theta) = \prod_{i=1}^n p(y_i|\theta)
+$$</span><script type="math/tex; mode=display">
+p(y|\theta) = \prod_{i=1}^n p(y_i|\theta)
+</script>
+</div>
+</p>
+<!-- preview -->
+
+<blockquote>
+<p>因为每个采样都是独立的分布，所以满足<span class="MathJaxBox"><span class="MathJax_Preview">$p(y_0,y_1) = p(y_0) p(y_1)$</span><script type="math/tex">p(y_0,y_1) = p(y_0) p(y_1)</script></span></p>
+</blockquote>
+<p>当我们最大化似然的时候，为了将连乘变成更加便于运算的累加，会加上一个<span class="MathJaxBox"><span class="MathJax_Preview">$log$</span><script type="math/tex">log</script></span>。因此：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\hat{\theta} = \arg\max_{\theta} \log p(y|\theta) = \arg\max_{\theta} \sum_{i=1}^n \log p(y_i|\theta)
+$$</span><script type="math/tex; mode=display">
+\hat{\theta} = \arg\max_{\theta} \log p(y|\theta) = \arg\max_{\theta} \sum_{i=1}^n \log p(y_i|\theta)
+</script>
+</div>
+</p>
+<h1 id="_2">极大似然估计的合理性解释</h1>
+<blockquote>
+<p>下面，笔者会用“飞行恐惧”的案例来说明极大似然估计的“不太严谨”。我们认为飞机失事的事件是X，事故发生后遇难的事件为Y。我们对“如果飞机发生事故，我会死”的分布进行了极大似然的估计，我们从飞机失事的事件中采样，发现事故发生后，遇难的概率p(Y|X)很大。但是，当我们采用贝叶斯推断理性的看待这个事情的时候，我们关注的是“如果我事故发生并遇难了，那么是飞机事故导致的”分布p(X|Y)。显然飞机失事的概率p(X)是很低的，因此p(X|Y)也会很低。</p>
+<p>因此，如果采用极大似然估计，会完全基于数据而忽略了对于参数<span class="MathJaxBox"><span class="MathJax_Preview">$\theta$</span><script type="math/tex">\theta</script></span>的先验。</p>
+</blockquote>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\bar{\theta} = argmax_\theta log p(\theta|y) = argmax_\theta [log p(\theta) + log p(y|\theta)]
+$$</span><script type="math/tex; mode=display">
+\bar{\theta} = argmax_\theta log p(\theta|y) = argmax_\theta [log p(\theta) + log p(y|\theta)]
+</script>
+</div>
+</p>
+<p>当<span class="MathJaxBox"><span class="MathJax_Preview">$p(\theta)$</span><script type="math/tex">p(\theta)</script></span>为常数时，也就是服从均匀分布时。后验的最大化等价于似然最大化：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\hat\theta = \bar\theta
+$$</span><script type="math/tex; mode=display">
+\hat\theta = \bar\theta
+</script>
+</div>
+</p>
+<p>因此极大似然估计的合理性在于，当先验为均匀分布时，后验的最大化等价于似然最大化。因此，在均匀分布先验下，贝叶斯推断和极大似然估计等价。</p>
+    </main>
+    <footer>
+        <p></p>
+    </footer>
+</body>
+
+<style>
+    #MathJax_Message {
+        display: none!important;
+    }
+</style>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      TeX: {
+        equationNumbers: { autoNumber: "all" }
+      },
+      config: ["MMLorHTML.js"],
+      jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+      extensions: ["MathMenu.js", "MathZoom.js"],
+      styles: {
+          '.MJXc-display, .mjx-chtml': { color: 'blue' }
+        }
+    });
+
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/javascript" src="https://unpkg.com/mermaid@8.1.0/dist/mermaid.min.js"></script>
+
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/code.css">
+    <link rel="stylesheet" href="/static/main.css">
+    <title>【拯救数学】概率混合模型</title>
+</head>
+
+<body>
+    <header>
+        <h1>【拯救数学】概率混合模型</h1>
+        <p>10月06日04时</p>
+    </header>
+    <main>
+        <h1 id="_1">什么是混合模型？</h1>
+<p>当单一的分布无法描述真实的数据分布时，我们会考虑将这个真实的数据分布拆解为多个分布的组合，这就是混合模型。</p>
+<p>例如：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\begin{equation}
+p(y) = \sum^K_{k=1}\pi_k p_k(y) \label{mixture_model}
+\end{equation}
+$$</span><script type="math/tex; mode=display">
+\begin{equation}
+p(y) = \sum^K_{k=1}\pi_k p_k(y) \label{mixture_model}
+\end{equation}
+</script>
+</div>
+</p>
+<!-- preview -->
+
+<p>其中<span class="MathJaxBox"><span class="MathJax_Preview">$p_k$</span><script type="math/tex">p_k</script></span>代表第<span class="MathJaxBox"><span class="MathJax_Preview">$k$</span><script type="math/tex">k</script></span>个分布分量。<span class="MathJaxBox"><span class="MathJax_Preview">$\pi_k$</span><script type="math/tex">\pi_k</script></span>为这个分布的权重，确保最后总的密度函数积分为<span class="MathJaxBox"><span class="MathJax_Preview">$1$</span><script type="math/tex">1</script></span>。</p>
+<blockquote>
+<p>潜变量模型也可以描述为混合模型：</p>
+<p>根据条件概率公式：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+p(y) = \sum^K_{k=1} \underbrace{p(z_k)}_{\pi_k} \underbrace{p(y|z_k)}_{p_k(y)}
+$$</span><script type="math/tex; mode=display">
+p(y) = \sum^K_{k=1} \underbrace{p(z_k)}_{\pi_k} \underbrace{p(y|z_k)}_{p_k(y)}
+</script>
+</div>
+</p>
+</blockquote>
+<h1 id="_2">混合高斯模型</h1>
+<p>根据式<span class="MathJaxBox"><span class="MathJax_Preview">$\eqref{mixture_model}$</span><script type="math/tex">\eqref{mixture_model}</script></span>，我们可以将混合高斯模型描述为多个不同均值和方差的高斯分布线性加权和：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\begin{equation}
+p(y) = \sum^K_{k=1}\pi_k \mathcal{N}(y|\mu_k,\sigma_k)
+\label{gmm_model}
+\end{equation}
+$$</span><script type="math/tex; mode=display">
+\begin{equation}
+p(y) = \sum^K_{k=1}\pi_k \mathcal{N}(y|\mu_k,\sigma_k)
+\label{gmm_model}
+\end{equation}
+</script>
+</div>
+</p>
+<h2 id="_3">混合高斯模型的非监督聚类</h2>
+<p>我们通过将一个多类别数据集的分布建模为混合高斯分布，如式<span class="MathJaxBox"><span class="MathJax_Preview">$\eqref{gmm_model}$</span><script type="math/tex">\eqref{gmm_model}</script></span>。我们通过极大似然估计（MLE）的方法，最大化似然函数（为了公式看起来好看，我们假设是连续随机变量）：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+max log p(y|\theta) = max p(\theta | y) p(y)
+$$</span><script type="math/tex; mode=display">
+max log p(y|\theta) = max p(\theta | y) p(y)
+</script>
+</div>
+</p>
+<p>因为<span class="MathJaxBox"><span class="MathJax_Preview">$p(y)$</span><script type="math/tex">p(y)</script></span>是固定的，所以我们可以忽略<span class="MathJaxBox"><span class="MathJax_Preview">$p(y)$</span><script type="math/tex">p(y)</script></span>，直接最大化<span class="MathJaxBox"><span class="MathJax_Preview">$p(\theta | y)$</span><script type="math/tex">p(\theta | y)</script></span>。</p>
+    </main>
+    <footer>
+        <p></p>
+    </footer>
+</body>
+
+<style>
+    #MathJax_Message {
+        display: none!important;
+    }
+</style>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      TeX: {
+        equationNumbers: { autoNumber: "all" }
+      },
+      config: ["MMLorHTML.js"],
+      jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+      extensions: ["MathMenu.js", "MathZoom.js"],
+      styles: {
+          '.MJXc-display, .mjx-chtml': { color: 'blue' }
+        }
+    });
+
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/javascript" src="https://unpkg.com/mermaid@8.1.0/dist/mermaid.min.js"></script>
+
+</html>

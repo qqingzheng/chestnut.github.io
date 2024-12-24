@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/code.css">
+    <link rel="stylesheet" href="/static/main.css">
+    <title>【扩散生成模型】R-Flow模型</title>
+</head>
+
+<body>
+    <header>
+        <h1>【扩散生成模型】R-Flow模型</h1>
+        <p>11月26日00时</p>
+    </header>
+    <main>
+        <h1 id="_1">再看扩散模型</h1>
+<p>我们设：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbf{x}_0 = \left[
+\begin{array}{c}
+x_0 \\
+x_1 \\
+\end{array}
+\right] \sim \mathcal{N}(\mathbf{u}, \mathbf{\sigma}^2)
+$$</span><script type="math/tex; mode=display">
+\mathbf{x}_0 = \left[
+\begin{array}{c}
+x_0 \\
+x_1 \\
+\end{array}
+\right] \sim \mathcal{N}(\mathbf{u}, \mathbf{\sigma}^2)
+</script>
+</div>
+</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbf{\epsilon} = \left[
+\begin{array}{c}
+\epsilon_0 \\
+\epsilon_1 \\
+\end{array}
+\right] \sim \mathcal{N}(\mathbf{0}, \mathbf{I})
+$$</span><script type="math/tex; mode=display">
+\mathbf{\epsilon} = \left[
+\begin{array}{c}
+\epsilon_0 \\
+\epsilon_1 \\
+\end{array}
+\right] \sim \mathcal{N}(\mathbf{0}, \mathbf{I})
+</script>
+</div>
+</p>
+<p>我们可视化上面两个分布：</p>
+<div style="display: flex; justify-content: space-between;">
+  <div style="flex: 1; margin-right: 10px; text-align: center;">
+    <img src="/assets/[扩散模型]R-Flow模型/output1.png" alt="Image 1" style="width: 100%;">
+    <p style="color: gray; font-size: 0.9em;">初始状态的两个分布</p>
+  </div>
+  <div style="flex: 1; margin-left: 10px; text-align: center;">
+    <img src="/assets/[扩散模型]R-Flow模型/ddpm_diffusion.gif" alt="Image 2" style="width: 100%;">
+    <p style="color: gray; font-size: 0.9em;">前向过程可视化</p>
+  </div>
+</div>
+
+<p>根据前向传播公式：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+x_t =\bar{\alpha}_t \cdot x_{0} + \bar{\beta}_t \cdot \epsilon
+$$</span><script type="math/tex; mode=display">
+x_t =\bar{\alpha}_t \cdot x_{0} + \bar{\beta}_t \cdot \epsilon
+</script>
+</div>
+</p>
+<p>我们可以把</font color="blue">蓝色</font>的分布（原始分布）逐渐变化到与</font color="red">红色</font>的分布（噪声）相同。</p>
+<p>可以发现，在二维情况下，原始分布是直线的方式向原始噪声移动的，并且移动的速度受到两个参数的影响。</p>
+<h2 id="r-flow">R-Flow</h2>
+<p>我们可以把这个过程看作一个物体向一个位置移动，写作一个ODE：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\frac{d\mathbf{x}}{dt} = \mathbf{v}
+$$</span><script type="math/tex; mode=display">
+\frac{d\mathbf{x}}{dt} = \mathbf{v}
+</script>
+</div>
+</p>
+<p>其中<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{v}$</span><script type="math/tex">\mathbf{v}</script></span>为速度函数。如果我们希望原始分布到噪声分布的移动过程是直线的，且匀速的，那么速度函数可以写为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbf{v} = \frac{\mathbf{x}_T - \mathbf{x}_0}{T}
+$$</span><script type="math/tex; mode=display">
+\mathbf{v} = \frac{\mathbf{x}_T - \mathbf{x}_0}{T}
+</script>
+</div>
+</p>
+<p>那么求解这个ODE可以得到：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbf{x}_t = \mathbf{x}_0 + \frac{\mathbf{x}_T - \mathbf{x}_0}{T} \cdot t \\
+= (1 - \frac{t}{T}) \mathbf{x}_0 + \frac{t}{T} \mathbf{x}_T
+$$</span><script type="math/tex; mode=display">
+\mathbf{x}_t = \mathbf{x}_0 + \frac{\mathbf{x}_T - \mathbf{x}_0}{T} \cdot t \\
+= (1 - \frac{t}{T}) \mathbf{x}_0 + \frac{t}{T} \mathbf{x}_T
+</script>
+</div>
+</p>
+<p>我们假设<span class="MathJaxBox"><span class="MathJax_Preview">$T=1$</span><script type="math/tex">T=1</script></span>，并且<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_T$</span><script type="math/tex">\mathbf{x}_T</script></span>为噪声分布。那么上式写为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbf{x}_t = (1 - t) \mathbf{x}_0 + t \mathbf{\epsilon}
+$$</span><script type="math/tex; mode=display">
+\mathbf{x}_t = (1 - t) \mathbf{x}_0 + t \mathbf{\epsilon}
+</script>
+</div>
+</p>
+<p>接下来就是如何求反向过程的问题。假设现在有一个“物体”位于噪声到图像分布轨迹上的某个点<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_{t}$</span><script type="math/tex">\mathbf{x}_{t}</script></span>，这个“物体”的速度在这个轨迹上的速度<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{v}$</span><script type="math/tex">\mathbf{v}</script></span>。那么物体的下一个位置<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_{t- \Delta t}$</span><script type="math/tex">\mathbf{x}_{t- \Delta t}</script></span>为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbf{x}_{t - \Delta t} = \mathbf{x}_{t} + \mathbf{v}_{t} \cdot \Delta t
+$$</span><script type="math/tex; mode=display">
+\mathbf{x}_{t - \Delta t} = \mathbf{x}_{t} + \mathbf{v}_{t} \cdot \Delta t
+</script>
+</div>
+</p>
+<p>在反向过程中，<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{v}_{t}$</span><script type="math/tex">\mathbf{v}_{t}</script></span>是未知的，所以我们不妨用神经网络去估计这个速度函数：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbf{v} = \mathbf{v}(\mathbf{x}_t, t)
+$$</span><script type="math/tex; mode=display">
+\mathbf{v} = \mathbf{v}(\mathbf{x}_t, t)
+</script>
+</div>
+</p>
+<p>所有可以得到优化目标：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+argmin_\theta \mathbb{E}_{x_0\sim D, x_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I}), t\sim\pi} MSE[(\mathbf{x}_{t} - \mathbf{x}_{t-1}), \mathbf{v}_\theta(\mathbf{x}_t, t)]
+$$</span><script type="math/tex; mode=display">
+argmin_\theta \mathbb{E}_{x_0\sim D, x_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I}), t\sim\pi} MSE[(\mathbf{x}_{t} - \mathbf{x}_{t-1}), \mathbf{v}_\theta(\mathbf{x}_t, t)]
+</script>
+</div>
+</p>
+<h2 id="_2">更系统的解释</h2>
+<blockquote>
+<p>以下解释大部分参考：https://zhuanlan.zhihu.com/p/638118847</p>
+</blockquote>
+<p>对于所有从<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_0$</span><script type="math/tex">\mathbf{x}_0</script></span>到<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_T$</span><script type="math/tex">\mathbf{x}_T</script></span>的轨迹，可以构成一个轨迹簇<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{\phi}(\mathbf{x}_0, \mathbf{x}_T)$</span><script type="math/tex">\mathbf{\phi}(\mathbf{x}_0, \mathbf{x}_T)</script></span>。我们可以用ODE：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\frac{d \mathbf{x}_t}{dt} = \frac{\partial \mathbf{\phi}(\mathbf{x}_0, \mathbf{x}_T)}{\partial t}
+$$</span><script type="math/tex; mode=display">
+\frac{d \mathbf{x}_t}{dt} = \frac{\partial \mathbf{\phi}(\mathbf{x}_0, \mathbf{x}_T)}{\partial t}
+</script>
+</div>
+</p>
+<p>我们用<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{v}_\theta(\mathbf{x}_t, t)$</span><script type="math/tex">\mathbf{v}_\theta(\mathbf{x}_t, t)</script></span>来拟合<span class="MathJaxBox"><span class="MathJax_Preview">$\frac{\partial \mathbf{\phi}(\mathbf{x}_0, \mathbf{x}_T)}{\partial t}$</span><script type="math/tex">\frac{\partial \mathbf{\phi}(\mathbf{x}_0, \mathbf{x}_T)}{\partial t}</script></span>。</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\frac{d \mathbf{x}_t}{dt} = \mathbf{v}_\theta(\mathbf{x}_t, t)
+$$</span><script type="math/tex; mode=display">
+\frac{d \mathbf{x}_t}{dt} = \mathbf{v}_\theta(\mathbf{x}_t, t)
+</script>
+</div>
+</p>
+<p>这时我们可以通过这个神经网络来预测轨迹。既然已经知道了原始分布到噪声分布的轨迹，我们就可以来反向找到原始分布。</p>
+<p>如果当轨迹为直线时，就可以得到上面推导的R-Flow形式，也被称为<strong>1-Rectified</strong>。</p>
+<!-- ## Meta Video GEN
+
+在Meta Video GEN中，加噪公式改成了（$T=1$）：
+
+$$
+\mathbf{x}_t =  (1 - (1 - \sigma_{min})t) \mathbf{x}_0 + t \mathbf{x}_T
+$$
+
+在原本公式中：
+
+$$
+\mathbf{x}_{1-\delta} =  (1 - (1 - \delta)) \mathbf{x}_0 + (1 - \delta)\mathbf{x}_T = \delta \mathbf{x}_0 + (1 - \delta)\mathbf{x}_1
+$$
+
+那么在$t={1-\delta}$的速度为：
+
+$$
+\frac{\mathbf{x}_1 - \mathbf{x}_{1-\delta}}{\delta} = \mathbf{x}_1 - \mathbf{x}_0
+$$ -->
+
+<h1 id="tricks">一些tricks</h1>
+<h2 id="sd3-lognorm">SD3 LogNorm策略</h2>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbf{x}_t = (1 - t) \mathbf{x}_0 + t \mathbf{x}_T
+$$</span><script type="math/tex; mode=display">
+\mathbf{x}_t = (1 - t) \mathbf{x}_0 + t \mathbf{x}_T
+</script>
+</div>
+</p>
+<div style="display: flex; justify-content: space-between;">
+  <div style="flex: 1; margin-right: 10px; text-align: center;">
+    <img src="/assets/[扩散模型]R-Flow模型/SD3.png" alt="Image 1" style="width: 50%;">
+    <p style="color: gray; font-size: 0.9em;">SD3提出的t策略</p>
+  </div>
+</div>
+    </main>
+    <footer>
+        <p></p>
+    </footer>
+</body>
+
+<style>
+    #MathJax_Message {
+        display: none!important;
+    }
+</style>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      TeX: {
+        equationNumbers: { autoNumber: "all" }
+      },
+      config: ["MMLorHTML.js"],
+      jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+      extensions: ["MathMenu.js", "MathZoom.js"],
+      styles: {
+          '.MJXc-display, .mjx-chtml': { color: 'blue' }
+        }
+    });
+
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/javascript" src="https://unpkg.com/mermaid@8.1.0/dist/mermaid.min.js"></script>
+
+</html>

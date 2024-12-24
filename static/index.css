@@ -1,0 +1,24 @@
+.article {
+    display: flex;
+    flex-direction: column;
+}
+
+.article .title { font-size: large; }
+
+.article .content {
+    margin: 1% 5%;
+}
+
+.papers {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.papers .title {
+    font-size: large;
+}
+
+.papers .content {
+    margin: 1% 5%;
+}

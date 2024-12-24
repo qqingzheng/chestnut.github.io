@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/code.css">
+    <link rel="stylesheet" href="/static/main.css">
+    <title>【扩散生成模型】信号视角下的Diffusion公式</title>
+</head>
+
+<body>
+    <header>
+        <h1>【扩散生成模型】信号视角下的Diffusion公式</h1>
+        <p>10月11日23时</p>
+    </header>
+    <main>
+        <h1 id="_1">信号视角下的前向过程公式</h1>
+<p>在扩散模型中，前向过程的公式可以表示为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\begin{equation}
+\mathbf{x}_t = \sqrt{\bar{\alpha}_t} \mathbf{x}_0 + \sqrt{\bar{\beta}_t} \epsilon
+\label{forward}
+\end{equation}
+$$</span><script type="math/tex; mode=display">
+\begin{equation}
+\mathbf{x}_t = \sqrt{\bar{\alpha}_t} \mathbf{x}_0 + \sqrt{\bar{\beta}_t} \epsilon
+\label{forward}
+\end{equation}
+</script>
+</div>
+</p>
+<p><span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_0$</span><script type="math/tex">\mathbf{x}_0</script></span> 是初始信号（在标准扩散模型中为像素空间的图像或视频信号，在潜变量扩散模型（LDM）中则为潜在空间的变量 <span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{z}_0$</span><script type="math/tex">\mathbf{z}_0</script></span>）。<span class="MathJaxBox"><span class="MathJax_Preview">$\epsilon \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$</span><script type="math/tex">\epsilon \sim \mathcal{N}(\mathbf{0}, \mathbf{I})</script></span> 是标准正态分布的噪声。<span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\alpha}_t = \prod_{i=0}^t a_i$</span><script type="math/tex">\bar{\alpha}_t = \prod_{i=0}^t a_i</script></span>，其中 <span class="MathJaxBox"><span class="MathJax_Preview">$a_i$</span><script type="math/tex">a_i</script></span> 是一个控制信号与噪声权重变化的系数，<span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\beta}_t$</span><script type="math/tex">\bar{\beta}_t</script></span>同理。</p>
+<h1 id="snr">SNR（信噪比）</h1>
+<p>在信号处理领域，SNR衡量信号相对于噪声的强度，它定义为信号功率与噪声功率的比值：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+SNR = \frac{P_{signal}}{P_{noise}}
+$$</span><script type="math/tex; mode=display">
+SNR = \frac{P_{signal}}{P_{noise}}
+</script>
+</div>
+</p>
+<p>在前向过程公式<span class="MathJaxBox"><span class="MathJax_Preview">$\eqref{forward}$</span><script type="math/tex">\eqref{forward}</script></span>中，时间步<span class="MathJaxBox"><span class="MathJax_Preview">$t$</span><script type="math/tex">t</script></span>的信噪比（期望意义上的）可以表示为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+SNR_t = \frac{||\sqrt{\bar{\alpha}_t} \mathbf{x}_0||^2}{||\sqrt{\bar{\beta}_t} \epsilon||^2} \\ = \sqrt{\frac{\bar{\alpha}_t} {\bar{\beta}_t}} \frac{||\mathbf{x}_0||^2}{|| \epsilon||^2} 
+$$</span><script type="math/tex; mode=display">
+SNR_t = \frac{||\sqrt{\bar{\alpha}_t} \mathbf{x}_0||^2}{||\sqrt{\bar{\beta}_t} \epsilon||^2} \\ = \sqrt{\frac{\bar{\alpha}_t} {\bar{\beta}_t}} \frac{||\mathbf{x}_0||^2}{|| \epsilon||^2} 
+</script>
+</div>
+</p>
+<p>为了保证在<span class="MathJaxBox"><span class="MathJax_Preview">$t=1$</span><script type="math/tex">t=1</script></span>时，SNR为0（也就是纯噪声）。根据上面的公式，<span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\alpha}_t$</span><script type="math/tex">\bar{\alpha}_t</script></span>需要在<span class="MathJaxBox"><span class="MathJax_Preview">$t = 1$</span><script type="math/tex">t = 1</script></span>的时候为<span class="MathJaxBox"><span class="MathJax_Preview">$0$</span><script type="math/tex">0</script></span>，即<span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\alpha}_t = 0$</span><script type="math/tex">\bar{\alpha}_t = 0</script></span>。</p>
+<h1 id="_2">扩散过程的能量守恒</h1>
+<p>为了保证扩散过程中的系统能量不发生变化，即不出现额外的能量增加或减少，我们希望任意时刻的信号和噪声的组合能量保持恒定。特别地，<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_T$</span><script type="math/tex">\mathbf{x}_T</script></span> 是纯高斯噪声，且已知其均值为 <span class="MathJaxBox"><span class="MathJax_Preview">$0$</span><script type="math/tex">0</script></span>，方差为 <span class="MathJaxBox"><span class="MathJax_Preview">$1$</span><script type="math/tex">1</script></span>，因此其能量为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+P_{T} = \mathbb{E}[\mathbf{x}_T^2] = var[\mathbf{x}_T] = 1
+$$</span><script type="math/tex; mode=display">
+P_{T} = \mathbb{E}[\mathbf{x}_T^2] = var[\mathbf{x}_T] = 1
+</script>
+</div>
+</p>
+<p>对于初始信号 <span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_0$</span><script type="math/tex">\mathbf{x}_0</script></span>，我们同样希望其能量为 <span class="MathJaxBox"><span class="MathJax_Preview">$1$</span><script type="math/tex">1</script></span>（在很多生成模型实现中，例如 Stable Diffusion，会将潜在变量归一化为均值为 <span class="MathJaxBox"><span class="MathJax_Preview">$0$</span><script type="math/tex">0</script></span>、方差为 <span class="MathJaxBox"><span class="MathJax_Preview">$1$</span><script type="math/tex">1</script></span> 的分布）。</p>
+<p>为了维持中间过程 <span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_t$</span><script type="math/tex">\mathbf{x}_t</script></span> 的能量守恒，我们需要确定 <span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\alpha}_t$</span><script type="math/tex">\bar{\alpha}_t</script></span> 和 <span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\beta}_t$</span><script type="math/tex">\bar{\beta}_t</script></span> 之间的关系。由于 <span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_0$</span><script type="math/tex">\mathbf{x}_0</script></span> 和 <span class="MathJaxBox"><span class="MathJax_Preview">$\epsilon$</span><script type="math/tex">\epsilon</script></span> 都是均值为 <span class="MathJaxBox"><span class="MathJax_Preview">$0$</span><script type="math/tex">0</script></span>、方差为 <span class="MathJaxBox"><span class="MathJax_Preview">$1$</span><script type="math/tex">1</script></span> 的分布，因此对于 <span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_t$</span><script type="math/tex">\mathbf{x}_t</script></span>：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbb{E}(x_t) = 0
+$$</span><script type="math/tex; mode=display">
+\mathbb{E}(x_t) = 0
+</script>
+</div>
+</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+var(x_t) = \bar{\alpha}_t  + \bar{\beta}_t
+$$</span><script type="math/tex; mode=display">
+var(x_t) = \bar{\alpha}_t  + \bar{\beta}_t
+</script>
+</div>
+</p>
+<p>为了保证 <span class="MathJaxBox"><span class="MathJax_Preview">$\mathbf{x}_t$</span><script type="math/tex">\mathbf{x}_t</script></span> 的方差恒定为 <span class="MathJaxBox"><span class="MathJax_Preview">$1$</span><script type="math/tex">1</script></span>，我们要求：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\bar{\alpha}_t + \bar{\beta}_t = 1
+$$</span><script type="math/tex; mode=display">
+\bar{\alpha}_t + \bar{\beta}_t = 1
+</script>
+</div>
+</p>
+<blockquote>
+<p>在后续看论文的过程中，发现在《PROGRESSIVE DISTILLATION FOR FAST SAMPLING OF DIFFUSION MODELS》中，这也被称为方差保持（variance-preserving）的Diffusion过程。相关的还有方差爆炸（variance-exploding）</p>
+</blockquote>
+<h1 id="snr_1">扩散能量守恒时的SNR</h1>
+<p>根据能量守恒条件 <span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\alpha}_t + \bar{\beta}_t = 1$</span><script type="math/tex">\bar{\alpha}_t + \bar{\beta}_t = 1</script></span>，信噪比可以进一步简化为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+SNR_t = \sqrt{\frac{\bar{\alpha}_t} {\bar{\beta}_t}} \frac{||\mathbf{x}_0||^2}{|| \epsilon||^2} = \sqrt{\frac{\bar{\alpha}_t} {\bar{\beta}_t}} \frac{var(x_0)}{var(\epsilon)} = \sqrt{\frac{\bar{\alpha}_t} {\bar{\beta}_t}} = \sqrt{\frac{\bar{\alpha}_t} {1 - \bar{\alpha}_t}}
+$$</span><script type="math/tex; mode=display">
+SNR_t = \sqrt{\frac{\bar{\alpha}_t} {\bar{\beta}_t}} \frac{||\mathbf{x}_0||^2}{|| \epsilon||^2} = \sqrt{\frac{\bar{\alpha}_t} {\bar{\beta}_t}} \frac{var(x_0)}{var(\epsilon)} = \sqrt{\frac{\bar{\alpha}_t} {\bar{\beta}_t}} = \sqrt{\frac{\bar{\alpha}_t} {1 - \bar{\alpha}_t}}
+</script>
+</div>
+</p>
+<h1 id="_3">总结</h1>
+<p>在扩散生成模型的前向过程中，核心是通过在每个时间步 <span class="MathJaxBox"><span class="MathJax_Preview">$t$</span><script type="math/tex">t</script></span> 添加噪声来逐渐转化信号，使得最终状态为纯噪声。通过控制 <span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\alpha}_t$</span><script type="math/tex">\bar{\alpha}_t</script></span> 和 <span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\beta}_t$</span><script type="math/tex">\bar{\beta}_t</script></span> 的演化关系，我们可以确保扩散过程的能量守恒以及信噪比的合理变化。具体地，<span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\alpha}_t$</span><script type="math/tex">\bar{\alpha}_t</script></span> 和 <span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\beta}_t$</span><script type="math/tex">\bar{\beta}_t</script></span> 之和保持为 <span class="MathJaxBox"><span class="MathJax_Preview">$1$</span><script type="math/tex">1</script></span>，确保了中间状态的方差恒定，也就是说系统的总能量在整个扩散过程中保持不变。同时，随着时间推移，<span class="MathJaxBox"><span class="MathJax_Preview">$\bar{\alpha}_t$</span><script type="math/tex">\bar{\alpha}_t</script></span> 的逐渐减少导致信噪比下降，使得信号成分逐渐被噪声所替代，直到完全成为噪声状态。</p>
+    </main>
+    <footer>
+        <p></p>
+    </footer>
+</body>
+
+<style>
+    #MathJax_Message {
+        display: none!important;
+    }
+</style>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      TeX: {
+        equationNumbers: { autoNumber: "all" }
+      },
+      config: ["MMLorHTML.js"],
+      jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+      extensions: ["MathMenu.js", "MathZoom.js"],
+      styles: {
+          '.MJXc-display, .mjx-chtml': { color: 'blue' }
+        }
+    });
+
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/javascript" src="https://unpkg.com/mermaid@8.1.0/dist/mermaid.min.js"></script>
+
+</html>

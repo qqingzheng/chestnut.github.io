@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/code.css">
+    <link rel="stylesheet" href="/static/main.css">
+    <title>【项目记录】视频跳切检测探索</title>
+</head>
+
+<body>
+    <header>
+        <h1>【项目记录】视频跳切检测探索</h1>
+        <p>09月25日02时</p>
+    </header>
+    <main>
+        <h1 id="_1">视频跳切是什么？</h1>
+<p>视频跳切在人眼的感官上是镜头的突然切换。顺其自然地会想到在像素空间上，用不同视频帧做差来检测跳切。然而，这种方法受颜色、光照等多种因素的影响，检测准确率低。</p>
+<p>因此笔者参考Panda70M的方法，探索在<font color="red">语义层面的视频跳切检测</font>。</p>
+<!-- preview -->
+
+<h1 id="_2">相关工作的处理方法</h1>
+<p>在Panda70M的论文中总结了两种难处理的视频：</p>
+<ol>
+<li>长视频，有很多的渐进场景转换。</li>
+<li>没有剪辑上的跳切，但是有大幅度的语义变换的片段。</li>
+</ol>
+<p>他们的处理方法非常简单粗暴。对于长视频，统一拆解为5秒的片段。对于片段，计算首尾帧的语义差异度<span class="MathJaxBox"><span class="MathJax_Preview">$s_{\text{b-to-e}}$</span><script type="math/tex">s_{\text{b-to-e}}</script></span>，如果这个差异度大于阈值<span class="MathJaxBox"><span class="MathJax_Preview">$t_{top}$</span><script type="math/tex">t_{top}</script></span>，则认为该片段语义变化过大，弃掉；如果这个差异度小于某个阈值<span class="MathJaxBox"><span class="MathJax_Preview">$t_{bottom}$</span><script type="math/tex">t_{bottom}</script></span>，认为该片段运动性很差，弃掉。</p>
+<h1 id="_3">不同视频的帧间语义分析</h1>
+<div style="display: flex; justify-content: space-between;">
+  <div style="flex: 1; margin-right: 10px; text-align: center;">
+    <img src="/assets/视频跳切检测探索/镜头抖动-运动快-无跳切.png" alt="Image 1" style="width: 100%;">
+    <p style="color: gray; font-size: 0.9em;">镜头抖动-运动快-无跳切</p>
+  </div>
+  <div style="flex: 1; margin-left: 10px; text-align: center;">
+    <img src="/assets/视频跳切检测探索/镜头固定-运动慢-无跳切.png" alt="Image 2" style="width: 100%;">
+    <p style="color: gray; font-size: 0.9em;">镜头固定-运动慢-无跳切</p>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: space-between;">
+  <div style="flex: 1; margin-right: 10px; text-align: center;">
+    <img src="/assets/视频跳切检测探索/跳切严重-PPT类视频.png" alt="Image 1" style="width: 100%;">
+    <p style="color: gray; font-size: 0.9em;">跳切严重-PPT类视频</p>
+  </div>
+  <div style="flex: 1; margin-left: 10px; text-align: center;">
+    <img src="/assets/视频跳切检测探索/镜头固定-运动慢-有跳切.png" alt="Image 2" style="width: 100%;">
+    <p style="color: gray; font-size: 0.9em;">镜头固定-运动慢-有跳切</p>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: space-between;">
+  <div style="flex: 1; margin-right: 10px; text-align: center;">
+    <img src="/assets/视频跳切检测探索/镜头固定-中途运动快-无跳切.png" alt="Image 1" style="width: 50%;">
+    <p style="color: gray; font-size: 0.9em;">镜头固定-中途运动快-但无跳切</p>
+  </div>
+</div>
+
+<h1 id="_4">实现</h1>
+<p>可以总结为跳切检测即为异常点检测，可以利用Z-Score的方法来进行。</p>
+<p>使用<code>lpips</code>库计算帧间的语义差异，根据阈值进行跳切检测。</p>
+<p>对于一个视频<span class="MathJaxBox"><span class="MathJax_Preview">$V = \{f_0, f_1, ..., f_{N-1}\}$</span><script type="math/tex">V = \{f_0, f_1, ..., f_{N-1}\}</script></span>，可以计算其帧间的语义差异度<span class="MathJaxBox"><span class="MathJax_Preview">$S = \{s_1, s_2, ..., s_{N-1}\}$</span><script type="math/tex">S = \{s_1, s_2, ..., s_{N-1}\}</script></span>。其中：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+s_i = \text{LPIPS}(f_{i-2}, f_{i})\ for\ i \in range(2, N, 2)
+$$</span><script type="math/tex; mode=display">
+s_i = \text{LPIPS}(f_{i-2}, f_{i})\ for\ i \in range(2, N, 2)
+</script>
+</div>
+</p>
+<p>对于一个视频，我们跨帧计算其语义差异度，并计算其Z-Score：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+z_i = \frac{s_i - \mu}{\sigma}
+$$</span><script type="math/tex; mode=display">
+z_i = \frac{s_i - \mu}{\sigma}
+</script>
+</div>
+</p>
+<p>这里会和原本的Z-Score公式有区别，这里没有取绝对值，因为我们不考虑语义差距异常小的点。其中<span class="MathJaxBox"><span class="MathJax_Preview">$\mu$</span><script type="math/tex">\mu</script></span>和<span class="MathJaxBox"><span class="MathJax_Preview">$\sigma$</span><script type="math/tex">\sigma</script></span>分别为<span class="MathJaxBox"><span class="MathJax_Preview">$S$</span><script type="math/tex">S</script></span>的均值和标准差。如果<span class="MathJaxBox"><span class="MathJax_Preview">$z_i &gt; t$</span><script type="math/tex">z_i > t</script></span>，则认为该帧为跳切点。</p>
+<p>理论看起来没啥问题，但是笔者实际运用遇到了下面的困难（这里暂且不讨论并发性能），做了下面的改进：</p>
+<ol>
+<li>如果<span class="MathJaxBox"><span class="MathJax_Preview">$\mu$</span><script type="math/tex">\mu</script></span>非常小，这个异常点也很小但<span class="MathJaxBox"><span class="MathJax_Preview">$z$</span><script type="math/tex">z</script></span>是相对值，它很大，实际<span class="MathJaxBox"><span class="MathJax_Preview">$s$</span><script type="math/tex">s</script></span>很小，但是会被上面的方法标记为“异常点”。</li>
+<li>如果<span class="MathJaxBox"><span class="MathJax_Preview">$z$</span><script type="math/tex">z</script></span>非常大，大到了不可容忍阈值，也要剔除。</li>
+</ol>
+<p>最终python实现如下：</p>
+<div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">detect_outliers_zscore</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">total_frame</span><span class="p">,</span> <span class="n">z_threshold</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">value_threshold</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span> <span class="n">z_judge_threshold</span><span class="o">=</span><span class="mf">3.2</span><span class="p">):</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">z_scores</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>
+    <span class="n">potential_outliers_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">z_scores</span> <span class="o">&gt;</span> <span class="n">z_threshold</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">outliers_judgement</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">potential_outliers_idx</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">value_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span> <span class="o">|</span> <span class="p">(</span><span class="n">z_scores</span><span class="p">[</span><span class="n">potential_outliers_idx</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">z_judge_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
+    <span class="n">outliers_indexes</span> <span class="o">=</span> <span class="n">potential_outliers_idx</span><span class="p">[</span><span class="n">outliers_judgement</span><span class="p">]</span>
+    <span class="n">outliers_indexes</span> <span class="o">=</span> <span class="n">outliers_indexes</span> <span class="o">*</span> <span class="mi">2</span> <span class="c1"># 是因为读入帧的时候step为2</span>
+    <span class="n">outliers_clip_indexes</span> <span class="o">=</span> <span class="n">get_clip_idx</span><span class="p">(</span><span class="n">outliers_indexes</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">total_frame</span><span class="p">)</span>
+
+    <span class="n">means</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">stds</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">outliers_clip_indexes</span><span class="p">:</span>
+        <span class="n">means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">start</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:</span> <span class="n">end</span> <span class="o">//</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+        <span class="n">stds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">start</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:</span> <span class="n">end</span> <span class="o">//</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">,</span> <span class="n">outliers_clip_indexes</span>
+</pre></div>
+
+
+<h1 id="_5">遇到的困难</h1>
+<h2 id="io">IO挑战</h2>
+<p>由于部分视频的高像素长时长，不是lpips推理，反而IO成为了瓶颈。笔者使用<code>decord</code>进行多线程解码，并且在解码过程中就对视频进行尺寸缩放和跳读。尽管这样缓解了IO缓慢的问题，但是IO仍然是瓶颈。</p>
+<div class="codehilite"><pre><span></span><span class="n">decord_vr</span> <span class="o">=</span> <span class="n">VideoReader</span><span class="p">(</span>
+    <span class="n">video_path</span><span class="p">,</span> <span class="n">ctx</span><span class="o">=</span><span class="n">cpu</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">num_threads</span><span class="o">=</span><span class="mi">16</span>
+<span class="p">)</span>
+<span class="n">total_frames</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">decord_vr</span><span class="p">),</span> <span class="mi">512</span><span class="p">)</span>
+<span class="n">frame_id_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total_frames</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+<span class="n">video_data</span> <span class="o">=</span> <span class="n">decord_vr</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="n">frame_id_list</span><span class="p">)</span><span class="o">.</span><span class="n">asnumpy</span><span class="p">()</span>
+</pre></div>
+
+
+<h2 id="_6">并发挑战</h2>
+<p>利用<code>accelerate</code>库，在多机上并行处理数据。为了能够实现检查点功能，需要自定义<code>Sampler</code>。比较搞笑的是，笔者当时切换了这个新的<code>Sampler</code>后，又使用<code>accelerator.prepare</code>处理了<code>Dataloader</code>，导致<code>Sampler</code>被“恶意”偷换了。</p>
+<div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">CustomDistributedSampler</span><span class="p">(</span><span class="n">Sampler</span><span class="p">[</span><span class="n">T_co</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">num_replicas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">rank</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span>
+        <span class="k">if</span> <span class="n">num_replicas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Requires distributed package to be available&quot;</span><span class="p">)</span>
+            <span class="n">num_replicas</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_world_size</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Requires distributed package to be available&quot;</span><span class="p">)</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">rank</span> <span class="o">&gt;=</span> <span class="n">num_replicas</span> <span class="ow">or</span> <span class="n">rank</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid rank </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">, rank should be in the interval [0, </span><span class="si">{</span><span class="n">num_replicas</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">=</span> <span class="n">num_replicas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="n">rank</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_replicas</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_replicas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+
+        <span class="n">padding_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">padding_size</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">[:</span><span class="n">padding_size</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">padding_size</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">)))[:</span><span class="n">padding_size</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">T_co</span><span class="p">]:</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">total_size</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">num_replicas</span><span class="p">]</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">indices</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span>
+</pre></div>
+
+
+<h2 id="_7">如何选择阈值</h2>
+<p>人看。</p>
+<h2 id="_8">如何解决多节点启动</h2>
+<p>笔者用<code>subprocess</code>库和<code>ssh</code>命令写了个多节点启动、停止和查看状态脚本。</p>
+    </main>
+    <footer>
+        <p></p>
+    </footer>
+</body>
+
+<style>
+    #MathJax_Message {
+        display: none!important;
+    }
+</style>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      TeX: {
+        equationNumbers: { autoNumber: "all" }
+      },
+      config: ["MMLorHTML.js"],
+      jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+      extensions: ["MathMenu.js", "MathZoom.js"],
+      styles: {
+          '.MJXc-display, .mjx-chtml': { color: 'blue' }
+        }
+    });
+
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/javascript" src="https://unpkg.com/mermaid@8.1.0/dist/mermaid.min.js"></script>
+
+</html>

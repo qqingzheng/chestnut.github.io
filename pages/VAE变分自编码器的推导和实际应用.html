@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/code.css">
+    <link rel="stylesheet" href="/static/main.css">
+    <title>VAE变分自编码器的推导与实际应用</title>
+</head>
+
+<body>
+    <header>
+        <h1>VAE变分自编码器的推导与实际应用</h1>
+        <p>09月25日01时</p>
+    </header>
+    <main>
+        <h1 id="vae">VAE概述</h1>
+<p>在视频生成和图像生成模型中，大多通过VAE将图像（高维的像素空间）压缩到潜在空间，并在潜在空间中进行生成。</p>
+<h1 id="_1">概率图模型</h1>
+<div class="mermaid">
+graph LR
+x --> |"p(z|x)"| z
+z --> |"q(x|z)"| x
+</div>
+
+<!-- preview -->
+
+<p><span class="MathJaxBox"><span class="MathJax_Preview">$p(x)$</span><script type="math/tex">p(x)</script></span>为图像的分布，<span class="MathJaxBox"><span class="MathJax_Preview">$p(z)$</span><script type="math/tex">p(z)</script></span>为潜变量分布。其中，<span class="MathJaxBox"><span class="MathJax_Preview">$p(z|x)$</span><script type="math/tex">p(z|x)</script></span>为<font color="red">编码器</font>，<span class="MathJaxBox"><span class="MathJax_Preview">$q(x|z)$</span><script type="math/tex">q(x|z)</script></span>为<font color="red">解码器</font>。为了得到训练损失，笔者在这里利用MLE和MAP的方法进行了推导。</p>
+<h1 id="mle">极大似然估计（MLE）</h1>
+<p>在这个问题中，根据极大似然估计，我们想要“假图像”分布尽可能与“真图像”分布接近，那么：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+max \sum_{x \in p(x)} log q(x)
+$$</span><script type="math/tex; mode=display">
+max \sum_{x \in p(x)} log q(x)
+</script>
+</div>
+</p>
+<p>我们希望找到上式的变分下界，这也是VAE的V的来源。因此做了如下的变形：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\begin{equation}
+log q(x) = log q(x) \underbrace{\int p(z|x) dz}_\text{=1} \\
+    = \int p(z|x) log q(x) dz \\
+    = \int p(z|x) log \frac{q(x,z)}{q(z|x)} dz \\
+    = \int p(z|x) log \frac{q(x,z)}{p(z|x)} \frac{p(z|x)}{q(z|x)} dz \\
+    = \int p(z|x) log \frac{q(x,z)}{p(z|x)} dz + \underbrace{\int p(z|x) log \frac{p(z|x)}{q(z|x)} dz}_{KL[p(z|x)||q(z|x)] &gt; 0} \\
+    \underbrace{&gt;=}_\text{ELBO} \int p(z|x) log \frac{q(x,z)}{p(z|x)} dz \\
+    = \int p(z|x) log \frac{q(x|z)q(z)}{p(z|x)} dz = LB
+\end{equation}
+$$</span><script type="math/tex; mode=display">
+\begin{equation}
+log q(x) = log q(x) \underbrace{\int p(z|x) dz}_\text{=1} \\
+    = \int p(z|x) log q(x) dz \\
+    = \int p(z|x) log \frac{q(x,z)}{q(z|x)} dz \\
+    = \int p(z|x) log \frac{q(x,z)}{p(z|x)} \frac{p(z|x)}{q(z|x)} dz \\
+    = \int p(z|x) log \frac{q(x,z)}{p(z|x)} dz + \underbrace{\int p(z|x) log \frac{p(z|x)}{q(z|x)} dz}_{KL[p(z|x)||q(z|x)] > 0} \\
+    \underbrace{>=}_\text{ELBO} \int p(z|x) log \frac{q(x,z)}{p(z|x)} dz \\
+    = \int p(z|x) log \frac{q(x|z)q(z)}{p(z|x)} dz = LB
+\end{equation}
+</script>
+</div>
+</p>
+<p>对于下界进一步变形为<font color="red">可以采样的形式</font>：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+LB = \int p(z|x) log \frac{q(x|z)q(z)}{p(z|x)} dz = - \int p(z|x) log \frac{p(z|x)}{q(z)} dz + \int p(z|x) log q(z) dz \\ 
+= -KL[p(z|x) || q(z)] + \int p(z|x) log q(x|z) dz \\
+= -KL[p(z|x) || q(z)] + \mathbb{E}_{z \sim p(z|x)}[log q(x|z)]
+$$</span><script type="math/tex; mode=display">
+LB = \int p(z|x) log \frac{q(x|z)q(z)}{p(z|x)} dz = - \int p(z|x) log \frac{p(z|x)}{q(z)} dz + \int p(z|x) log q(z) dz \\ 
+= -KL[p(z|x) || q(z)] + \int p(z|x) log q(x|z) dz \\
+= -KL[p(z|x) || q(z)] + \mathbb{E}_{z \sim p(z|x)}[log q(x|z)]
+</script>
+</div>
+</p>
+<p>以上的公式就可以训练了。</p>
+<script>mermaid.initialize({startOnLoad:true});</script>
+    </main>
+    <footer>
+        <p></p>
+    </footer>
+</body>
+
+<style>
+    #MathJax_Message {
+        display: none!important;
+    }
+</style>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      TeX: {
+        equationNumbers: { autoNumber: "all" }
+      },
+      config: ["MMLorHTML.js"],
+      jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+      extensions: ["MathMenu.js", "MathZoom.js"],
+      styles: {
+          '.MJXc-display, .mjx-chtml': { color: 'blue' }
+        }
+    });
+
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/javascript" src="https://unpkg.com/mermaid@8.1.0/dist/mermaid.min.js"></script>
+
+</html>

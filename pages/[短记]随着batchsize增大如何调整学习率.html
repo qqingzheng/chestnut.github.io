@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/code.css">
+    <link rel="stylesheet" href="/static/main.css">
+    <title>【短记】随着batch size增大如何调整学习率</title>
+</head>
+
+<body>
+    <header>
+        <h1>【短记】随着batch size增大如何调整学习率</h1>
+        <p>11月27日22时</p>
+    </header>
+    <main>
+        <p>随机从数据中采样一个样本<span class="MathJaxBox"><span class="MathJax_Preview">$i$</span><script type="math/tex">i</script></span>，其对某个权重<span class="MathJaxBox"><span class="MathJax_Preview">$w$</span><script type="math/tex">w</script></span>产生的梯度为<span class="MathJaxBox"><span class="MathJax_Preview">$g_i$</span><script type="math/tex">g_i</script></span>。当批次大小为<span class="MathJaxBox"><span class="MathJax_Preview">$B$</span><script type="math/tex">B</script></span>时，批次对该权重产生的梯度为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+g_B = \frac{1}{B}\sum_{i=1}^B g_i.
+$$</span><script type="math/tex; mode=display">
+g_B = \frac{1}{B}\sum_{i=1}^B g_i.
+</script>
+</div>
+</p>
+<p>批次梯度的期望等于全体样本的梯度期望，即：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbb E(g_B) = \mathbb E(g).
+$$</span><script type="math/tex; mode=display">
+\mathbb E(g_B) = \mathbb E(g).
+</script>
+</div>
+</p>
+<p>批次的方差为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbb{Var}(g_B) = \mathbb{Var}(\frac{1}{B}\sum_{i=1}^B g_i) = \frac{1}{B^2}\mathbb{Var}(\sum_{i=1}^B g_i) \\
+= \frac{1}{B^2}\sum_{i=1}^B\mathbb{Var}(g_i) = \frac{1}{B}\mathbb{Var}(g).
+$$</span><script type="math/tex; mode=display">
+\mathbb{Var}(g_B) = \mathbb{Var}(\frac{1}{B}\sum_{i=1}^B g_i) = \frac{1}{B^2}\mathbb{Var}(\sum_{i=1}^B g_i) \\
+= \frac{1}{B^2}\sum_{i=1}^B\mathbb{Var}(g_i) = \frac{1}{B}\mathbb{Var}(g).
+</script>
+</div>
+</p>
+<p>考虑SGD，其权重的更新规则为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+w \leftarrow w - \eta g_B,
+$$</span><script type="math/tex; mode=display">
+w \leftarrow w - \eta g_B,
+</script>
+</div>
+</p>
+<p>其中<span class="MathJaxBox"><span class="MathJax_Preview">$\eta$</span><script type="math/tex">\eta</script></span>为学习率。对于某次梯度更新的方差为：</p>
+<p>
+<div class="MathJaxBox"><span class="MathJax_Preview">$$
+\mathbb{Var}(\eta g_B) = \eta^2\mathbb{Var}(g_B) = \eta^2\frac{1}{B}\mathbb{Var}(g).
+$$</span><script type="math/tex; mode=display">
+\mathbb{Var}(\eta g_B) = \eta^2\mathbb{Var}(g_B) = \eta^2\frac{1}{B}\mathbb{Var}(g).
+</script>
+</div>
+</p>
+<p><strong>所以，为了让梯度更新的方差保持和样本方差一致；或者说不随着<span class="MathJaxBox"><span class="MathJax_Preview">$B$</span><script type="math/tex">B</script></span>的变化而变化。我们希望<span class="MathJaxBox"><span class="MathJax_Preview">$\eta' = \sqrt{B} \eta$</span><script type="math/tex">\eta' = \sqrt{B} \eta</script></span></strong>。</p>
+<h3 id="_1">相关证明</h3>
+<ol>
+<li>为什么<span class="MathJaxBox"><span class="MathJax_Preview">$\frac{1}{B^2}\sum_{i=1}^B\mathbb{Var}(g_i) = \frac{1}{B}\mathbb{Var}(g)$</span><script type="math/tex">\frac{1}{B^2}\sum_{i=1}^B\mathbb{Var}(g_i) = \frac{1}{B}\mathbb{Var}(g)</script></span>。</li>
+</ol>
+<p>我们知道<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbb{Var}(A+B) = \mathbb{Var}(A) + \mathbb{Var}(B) + 2\mathbb{Cov}(A,B)$</span><script type="math/tex">\mathbb{Var}(A+B) = \mathbb{Var}(A) + \mathbb{Var}(B) + 2\mathbb{Cov}(A,B)</script></span>。只有当协方差为0时，才能得到<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbb{Var}(A+B) = \mathbb{Var}(A) + \mathbb{Var}(B)$</span><script type="math/tex">\mathbb{Var}(A+B) = \mathbb{Var}(A) + \mathbb{Var}(B)</script></span>。</p>
+<p>因为<span class="MathJaxBox"><span class="MathJax_Preview">$g_i$</span><script type="math/tex">g_i</script></span>为独立同分布的随机变量，所以<span class="MathJaxBox"><span class="MathJax_Preview">$\mathbb{Cov}(g_i,g_j) = 0$</span><script type="math/tex">\mathbb{Cov}(g_i,g_j) = 0</script></span>。因此满足上面的式子。</p>
+    </main>
+    <footer>
+        <p></p>
+    </footer>
+</body>
+
+<style>
+    #MathJax_Message {
+        display: none!important;
+    }
+</style>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      TeX: {
+        equationNumbers: { autoNumber: "all" }
+      },
+      config: ["MMLorHTML.js"],
+      jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+      extensions: ["MathMenu.js", "MathZoom.js"],
+      styles: {
+          '.MJXc-display, .mjx-chtml': { color: 'blue' }
+        }
+    });
+
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/javascript" src="https://unpkg.com/mermaid@8.1.0/dist/mermaid.min.js"></script>
+
+</html>
